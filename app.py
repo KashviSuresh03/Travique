@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-
+import matplotlib.pyplot as plt
 data=pd.read_csv("data/destination.csv")
 
 st.title("Travique AI")
@@ -23,11 +23,23 @@ if st.button("Plan My Trip"):
         st.error("Please enter both source and destination.")
         st.stop()
     filtered_places=data[data["City"].str.lower()==destination.lower()]
+    top_places=filtered_places.sort_values(by="Google review rating",ascending=False)
 
     st.subheader("📍 Recommended Attractions")
 
-    for place in filtered_places["Name"].head(5):
-        st.write(f"- {place}")
+    
+    for _, row in filtered_places.head(5).iterrows():
+        st.write(f"- {row['Name']} | ⭐ {row['Google review rating']}")
+
+    trip_places=top_places.head(days*2)["Name"]
+    place_index=0
+
+    for day in range(1, days+1):
+        st.write(f"Day {day}")
+        for i in range(2):
+            if place_index < len(trip_places):
+                st.write(f"{trip_places[place_index]}")
+                place_index+=1
 
     st.success("Travique AI is planning your trip!.....")
 
@@ -48,6 +60,15 @@ if st.button("Plan My Trip"):
 
     st.subheader("Budget Allocation")
 
+    budget_data={
+    "Stay":hotel_budget,
+    "Food":food_budget,
+    "Travel":travel_budget
+}
+    fig,ax=plt.subplots()
+    ax.pie(budget_data.values(), labels=budget_data.keys(), autopct="%1.1f%%")
+    st.pyplot(fig)
+
     col1, col2, col3 = st.columns(3)
 
     with col1:
@@ -59,34 +80,11 @@ if st.button("Plan My Trip"):
     with col3:
         st.metric("🚌 Travel", f"₹{travel_budget:.0f}")
     interest = interests[0] if interests else "general sightseeing"
-    if interest=="Nature":
-        st.write("Botanical Garden")
-        st.write("Nature Trail")
-        st.write("Waterfall Hike")
-
-    elif interest=="Culture":
-        st.write("Local Museum")
-        st.write("Historical Site")
-        st.write("Cultural Show")
     
-    elif interest=="Adventure":
-        st.write("Ziplining")
-        st.write("Kayaking")
-        st.write("Rock Climbing")
-    
-    elif interest=="Food":
-        st.write("Street Food Tour")
-        st.write("Cooking Class")
-        st.write("Food Market Visit")
 
     st.write("Suggested Itinerary")
   
-    for day in range(1, days + 1):
-        st.write(f"Day {day}:")
-        st.write(f"- Activity 1: Explore local attractions related to {interest}")
-        st.write(f"- Activity 2: Try local cuisine at a popular restaurant")
-        st.write(f"- Activity 3: Relax at a recommended spot")
-        st.write("Take photos and share your experience on social media with #TraviqueAI")
+  
 
     if female_mode:
         st.write("Safety Tips for Solo")
@@ -103,6 +101,10 @@ st.write("Fire Department: 101")
 
 if female_mode:
     st.write("Women Help Line: 1091")
+
+
+
+
 
 
 
