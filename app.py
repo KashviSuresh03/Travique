@@ -2,12 +2,17 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import pickle
+from openai import OpenAI
 
 
 data=pd.read_csv("data/destination.csv")
 
 with open("travique_model.pkl", "rb") as f:
     model = pickle.load(f)
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=st.secrets["OPENROUTER_API_KEY"]
+)
     
 st.title("Travique AI")
 st.write("Student Budget Travel Planner")
@@ -20,6 +25,10 @@ budget=st.number_input("Budget:", min_value=1000, step=500)
 days= st.number_input("Number of days:", min_value=1, step=1)
 
 interests = st.multiselect("Interests:", ["Nature", "Culture", "Adventure", "Food", "Relaxation"])
+travel_style = st.selectbox(
+    "Travel Style",
+    ["Budget", "Balanced", "Luxury"]
+)
 
 female_mode=st.checkbox("solo female traveler")
 
@@ -34,7 +43,7 @@ if st.button("Plan My Trip"):
         st.stop()
     top_places=filtered_places.sort_values(by="Google review rating",ascending=False)
 
-
+    st.divider()
     st.subheader("📍 Recommended Attractions")
 
     
@@ -54,7 +63,7 @@ if st.button("Plan My Trip"):
         })
 
         predicted_rating=model.predict(sample)
-
+        
         st.subheader("🤖 AI Attraction Score")
         st.success( f"Predicted Rating: ⭐ {predicted_rating[0]:.2f}/5")
 
@@ -69,7 +78,7 @@ if st.button("Plan My Trip"):
                 place_index+=1
 
     st.success("Travique AI is planning your trip!.....")
-
+    st.divider()
     st.subheader("Trip Summary")
 
     st.write(f"📍 From: {source}")
@@ -84,7 +93,7 @@ if st.button("Plan My Trip"):
     hotel_budget = budget * 0.4
     food_budget = budget * 0.3
     travel_budget = budget * 0.3
-
+    st.divider()
     st.subheader("Budget Allocation")
 
     budget_data={
@@ -109,7 +118,6 @@ if st.button("Plan My Trip"):
     daily_budget = budget / days
     st.subheader("💵 Daily Budget")
     st.metric("Budget Per Day",f"₹{daily_budget:.0f}")
-    interest = interests[0] if interests else "general sightseeing"
     
     st.subheader("🎓 Student Budget Analysis")
 
@@ -141,9 +149,66 @@ if st.button("Plan My Trip"):
         st.write("• Consider guided tours")
         st.write("• Explore local food experiences")
 
-    st.write("Suggested Itinerary")
-  
-  
+    st.divider()
+    st.subheader("🤖 AI Travel Assistant")
+
+    prompt = f"""
+    Create a detailed travel itinerary.
+
+    Source: {source}
+    Destination: {destination}
+    Budget: ₹{budget}
+    Days: {days}
+    Travel Style: {travel_style}
+
+    Interests:
+    {', '.join(interests)}
+
+    Solo Female Traveler:
+    {female_mode}
+
+    Include:
+
+    1. Day-wise itinerary
+    2. Estimated daily spending
+    3. Local food recommendations
+    4. Packing checklist
+    5. Safety advice
+    6. Student budget tips
+
+    Format clearly using headings.
+    """
+
+    with st.spinner("Travique AI is planning your trip..."):
+
+        try:
+            response = client.chat.completions.create(
+                model="nex-agi/nex-n2-pro:free",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+            )
+
+            ai_reply = response.choices[0].message.content
+
+            st.markdown(ai_reply)
+
+            st.download_button( 
+                "📄 Download Itinerary",
+                ai_reply,
+                file_name=f"{destination}_itinerary.txt",
+                mime="text/plain"
+            )
+
+        except Exception as e:
+            st.error(f"AI Error: {e}")
+
+
+    
+        
 
     if female_mode:
         st.subheader("🛡 Safety Checklist")
