@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import pickle
-
+from openai import OpenAI
 
 
 data=pd.read_csv("data/destination.csv")
