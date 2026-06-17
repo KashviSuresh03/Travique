@@ -177,7 +177,7 @@ if st.button("Plan My Trip"):
 
     Format clearly using headings.
     """
-
+    st.success("✨ AI-Powered Itinerary Generation Enabled")
     with st.spinner("Travique AI is planning your trip..."):
 
         try:
