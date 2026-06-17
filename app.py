@@ -2,16 +2,15 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import pickle
-from openai import OpenAI
+from google import genai
 
 
 data=pd.read_csv("data/destination.csv")
 
 with open("travique_model.pkl", "rb") as f:
     model = pickle.load(f)
-client = OpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=st.secrets["OPENROUTER_API_KEY"]
+client = genai.Client(
+    api_key=st.secrets["GEMINI_API_KEY"]
 )
     
 st.title("Travique AI")
@@ -182,17 +181,12 @@ if st.button("Plan My Trip"):
     with st.spinner("Travique AI is planning your trip..."):
 
         try:
-            response = client.chat.completions.create(
-                model="nex-agi/nex-n2-pro:free",
-                messages=[
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ]
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt
             )
 
-            ai_reply = response.choices[0].message.content
+            ai_reply = response.text
 
             st.markdown(ai_reply)
 
